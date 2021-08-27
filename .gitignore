@@ -5,5 +5,5 @@ build/
 test/
 truffle-config.js
 package.json
-
+contracts.txt
 

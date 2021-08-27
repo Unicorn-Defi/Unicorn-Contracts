@@ -599,8 +599,8 @@ contract UnicornToken is Context, IBEP20, Ownable {
     
     
     
-    IUniswapV2Router02 public immutable uniswapV2Router;
-    address public immutable uniswapV2Pair;
+    IUniswapV2Router02 immutable public  uniswapV2Router;
+    address immutable public  uniswapV2Pair;
     
     
     event MinTokensBeforeSwapUpdated(uint256 minTokensBeforeSwap);
@@ -620,7 +620,7 @@ contract UnicornToken is Context, IBEP20, Ownable {
 
 
 
-    constructor(address _projectWallet) public {
+    constructor(address _projectWallet,address _routerAddress) public {
         _name = "Unicorn";
         _symbol = "UNIQ";
         _decimals = 18;
@@ -628,7 +628,7 @@ contract UnicornToken is Context, IBEP20, Ownable {
     
         operator = msg.sender;
     
-      IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(0x10ED43C718714eb63d5aA57B78B54704E256024E);
+      IUniswapV2Router02 _uniswapV2Router = IUniswapV2Router02(_routerAddress);
          // Create a uniswap pair for this new token
         uniswapV2Pair = IUniswapV2Factory(_uniswapV2Router.factory())
             .createPair(address(this), _uniswapV2Router.WETH());

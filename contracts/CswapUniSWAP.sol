@@ -427,11 +427,9 @@ contract CswapUniSWAP{
 
 
 
-    constructor(address _cswap ,address _unicorn) public{
+    constructor() public{
         owner = msg.sender;
-        unicorn = IERC20(_unicorn);
-        cswap = IERC20(_cswap);
-       
+  
     }
     
     
@@ -455,6 +453,11 @@ contract CswapUniSWAP{
 
     
     
+    function  setAddresses(address _cswap,address _unicorn) public {
+        require(msg.sender == owner,"You are not authorized");
+        unicorn= IERC20(_unicorn);
+        cswap = IERC20(_cswap);
+    }
   
     
    

@@ -425,6 +425,12 @@ contract UnicornMasterChef is Ownable {
         return user.amount.mul(accUNIQPerShare).div(1e12).sub(user.rewardDebt);
     }
 
+
+     // Update the panther referral contract address by the owner
+    function setUnicornReferral(IUnicornReferral _unicornReferral) public onlyOwner {
+        unicornReferral = _unicornReferral;
+    }
+
     // Update reward variables for all pools. Be careful of gas spending!
     function massUpdatePools() public {
         uint256 length = poolInfo.length;

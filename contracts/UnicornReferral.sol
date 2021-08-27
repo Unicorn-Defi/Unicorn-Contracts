@@ -777,8 +777,5 @@ contract UnicornReferral is IUnicornReferral, Ownable {
         emit OperatorUpdated(_operator, _status);
     }
 
-    // Owner can drain tokens that are sent here by mistake
-    function drainBEP20Token(IBEP20 _token, uint256 _amount, address _to) external onlyOwner {
-        _token.safeTransfer(_to, _amount);
-    }
+ 
 }
