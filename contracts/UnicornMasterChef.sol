@@ -263,6 +263,23 @@ library Address {
 }
 
 
+interface IUnicornReferral {
+    /**
+     * @dev Record referral.
+     */
+    function recordReferral(address user, address referrer) external;
+
+    /**
+     * @dev Record referral commission.
+     */
+    function recordReferralCommission(address referrer, uint256 commission) external;
+
+    /**
+     * @dev Get the referrer address that referred the user.
+     */
+    function getReferrer(address user) external view returns (address);
+}
+
 
 import  "./UnicornToken.sol";
 
@@ -272,6 +289,13 @@ pragma solidity ^0.6.12;
 contract UnicornMasterChef is Ownable {
     using SafeMath for uint256;
     using SafeBEP20 for IBEP20;
+
+    IUnicornReferral public unicornReferral;
+    uint16 public referralCommissionRate = 100; // 1%
+
+    //max 10%
+    uint16 public constant MAXIMUM_REFERRAL_COMMISSION_RATE = 1000;
+
 
     // Info of each user.
     struct UserInfo {
@@ -315,6 +339,7 @@ contract UnicornMasterChef is Ownable {
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
+    event ReferralCommissionPaid(address indexed user, address indexed referrer, uint256 commissionAmount);
 
     constructor(
         UnicornToken _uniq,
@@ -332,6 +357,13 @@ contract UnicornMasterChef is Ownable {
 
     function poolLength() external view returns (uint256) {
         return poolInfo.length;
+    }
+
+
+    // Update referral commission rate by the owner
+    function setReferralCommissionRate(uint16 _referralCommissionRate) public onlyOwner {
+        require(_referralCommissionRate <= MAXIMUM_REFERRAL_COMMISSION_RATE, "setReferralCommissionRate: invalid referral commission rate basis points");
+        referralCommissionRate = _referralCommissionRate;
     }
 
     
@@ -421,14 +453,19 @@ contract UnicornMasterChef is Ownable {
     }
 
     // Deposit LP tokens to MasterChef for UNIQ allocation.
-    function deposit(uint256 _pid, uint256 _amount) public {
+    function deposit(uint256 _pid, uint256 _amount,address _referrer) public {
         PoolInfo storage pool = poolInfo[_pid];
         UserInfo storage user = userInfo[_pid][msg.sender];
         updatePool(_pid);
+
+        if (_amount > 0 && address(unicornReferral) != address(0) && _referrer != address(0) && _referrer != msg.sender) {
+            unicornReferral.recordReferral(msg.sender, _referrer);
+        }
         if (user.amount > 0) {
             uint256 pending = user.amount.mul(pool.accUNIQPerShare).div(1e12).sub(user.rewardDebt);
             if (pending > 0) {
-                safeUNIQTransfer(msg.sender, pending);
+                uint256 comissionPaid = payReferralCommission(msg.sender, pending);
+                safeUNIQTransfer(msg.sender, pending.sub(comissionPaid));
             }
         }
         if (_amount > 0) {
@@ -457,7 +494,9 @@ contract UnicornMasterChef is Ownable {
         updatePool(_pid);
         uint256 pending = user.amount.mul(pool.accUNIQPerShare).div(1e12).sub(user.rewardDebt);
         if (pending > 0) {
-            safeUNIQTransfer(msg.sender, pending);
+            uint256 comissionPaid = payReferralCommission(msg.sender, pending);
+            safeUNIQTransfer(msg.sender, pending.sub(comissionPaid));
+
         }
         if (_amount > 0) {
             user.amount = user.amount.sub(_amount);
@@ -507,5 +546,27 @@ contract UnicornMasterChef is Ownable {
     function updateEmissionRate(uint256 _uniqPerBlock) public onlyOwner {
         massUpdatePools();
         uniqPerBlock = _uniqPerBlock;
+    }
+
+
+    // Pay referral commission to the referrer who referred this user.
+    function payReferralCommission(address _user, uint256 _pending) internal returns(uint256) {
+        uint256 commissionAmount = 0;
+
+       
+        if (address(unicornReferral) != address(0) && referralCommissionRate > 0) {
+            address referrer = unicornReferral.getReferrer(_user);
+            commissionAmount = _pending.mul(referralCommissionRate).div(10000);
+
+            if (referrer != address(0) && commissionAmount > 0) {
+                safeUNIQTransfer(referrer, commissionAmount);
+                unicornReferral.recordReferralCommission(referrer, commissionAmount);
+                emit ReferralCommissionPaid(_user, referrer, commissionAmount);
+            }else{
+                commissionAmount = 0;
+            }
+        }
+
+        return commissionAmount;
     }
 }
