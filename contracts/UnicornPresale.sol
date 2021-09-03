@@ -170,11 +170,6 @@ contract UnicornPresale{
 
 
 
-    uint256 public normalSaleSold = 0;
-
-
-
-
 
 
 
@@ -195,20 +190,20 @@ contract UnicornPresale{
     }
     
     modifier IsOwner{
-        require(msg.sender == owner);
+        require(msg.sender == owner,"Not authorized");
         _;
     }
  
     
     
     
-    function changeOwner (address addr) public {
-        require(msg.sender == owner,"You are not authorized");
+    function changeOwner (address addr) public IsOwner {
+      require(addr != address(0),"invalid Address");
 
         owner = addr;
     }
-    function changePrice(uint256 price) public {
-        require(msg.sender == owner,"You are not authorized");
+    function changePrice(uint256 price) public  IsOwner{
+        require(price>0,"invalid price");
         _price = price;
     }
     
@@ -233,8 +228,7 @@ contract UnicornPresale{
     
     
     
-    function setMaxLimit(uint256 maxL) public {
-        require(msg.sender == owner,"You are not authorized");
+    function setMaxLimit(uint256 maxL) public IsOwner {
 
         MAX_BUY_LIMIT =  maxL;
     }
@@ -250,8 +244,8 @@ contract UnicornPresale{
         uint256 noOfTokens = calculateTokens(msg.value);
         uint256 preBalance = token.balanceOf(msg.sender);
 
-        require(noOfTokens.add(preBalance)<= MAX_BUY_LIMIT,"You can't have more than 2000 tokens");
-        require(noOfTokens<= MAX_BUY_LIMIT,"You can't buy more than 2000 tokens");
+        require(noOfTokens.add(preBalance)<= MAX_BUY_LIMIT,"You can't have more than 1000 tokens");
+        require(noOfTokens<= MAX_BUY_LIMIT,"You can't buy more than 1000 tokens");
       
         safeTransferTokens(noOfTokens);
     }
@@ -269,13 +263,11 @@ contract UnicornPresale{
     
     
     
-    // this fucntion is used to check how many fokitos are remaining in the contract
     function getTokenBalance() public view returns(uint256){
         return  token.balanceOf(address(this));
     }
     
     
-        // this fucntion is used to check how many ethers are there in the contract
 
     function getContractBalance() public view returns(uint256){
         return address(this).balance;
@@ -284,27 +276,21 @@ contract UnicornPresale{
     
     
     
-    // use this fuction for withdrawing all the unsold tokens
 
-    function withdrawTokens( ) public{
-        require(msg.sender == owner,"You are not the owner");
+    function withdrawTokens( ) public IsOwner{
         token.transfer(owner,getTokenBalance());
         
     }
     
     
     
-    // use this fuction for withdrawing all the ethers
-    function withdrawBalance( ) public{
-        require(msg.sender == owner,"You are not the owner");
+    function withdrawBalance( ) public IsOwner{
         payable(msg.sender).transfer(getContractBalance());
     }
     
     
-    // you can extend or shrink the presale time 
 
-    function changePresaleEndTime(uint256 time) public{
-        require(msg.sender == owner,"You are not the owner");
+    function changePresaleEndTime(uint256 time) public IsOwner{
         presaleTimeEnds = time;
         
     }

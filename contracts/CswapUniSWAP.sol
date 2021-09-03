@@ -2,6 +2,7 @@
 
 pragma solidity ^0.6.12;
 
+// SPDX-License-Identifier: MIT
 
 
 library Address {
@@ -400,128 +401,68 @@ contract CswapUniSWAP{
     using SafeMath for uint256;
     using SafeERC20 for IERC20;
 
-
-
-
-
     event CSWAPExchanged(address user, uint256 amount);
 
     address public owner;
     IERC20 public cswap;
     IERC20 public unicorn;
-
-
     uint256 public totalCSWAPExchanged;
-
-
-
-    
-
-
-
-
-
-
-
-
-
-
 
     constructor() public{
         owner = msg.sender;
-  
     }
     
-    
-    modifier IsOwner{
-        require(msg.sender == owner);
+    modifier onlyOwner{
+        require(msg.sender == owner,"Not Authorized");
         _;
     }
  
-    
-    
-    
-    function changeOwner (address addr) public {
-        require(msg.sender == owner,"You are not authorized");
+    function changeOwner(address addr) public  onlyOwner{
+
+        require(addr != address(0),"Invalid Address");
 
         owner = addr;
     }
    
-
-
-
-
-    
-    
-    function  setAddresses(address _cswap,address _unicorn) public {
-        require(msg.sender == owner,"You are not authorized");
+    function  setAddresses(address _cswap,address _unicorn) public onlyOwner {
+        require(_cswap != address(0) && _unicorn != address(0),"Please Pass vaild addresses");
         unicorn= IERC20(_unicorn);
         cswap = IERC20(_cswap);
     }
   
-    
-   
-    
     function safeTransferUnicorn(uint256 noOfTokens)internal{
 
         unicorn.safeTransfer(msg.sender,noOfTokens);
         totalCSWAPExchanged = totalCSWAPExchanged.add(noOfTokens);
     }
     
-    
-    
-    
-    
-    
-     
     function swapCWAP(uint256 amount) public  {
+        require(amount> 0,"Invalid Amount");
         cswap.safeTransferFrom(msg.sender,address(this),amount);
         safeTransferUnicorn(amount);
         emit CSWAPExchanged(msg.sender,amount);
     }
     
-    
-
-    
-
-
-
-    
-    
-    
     function getUnicornBalance() public view returns(uint256){
         return  unicorn.balanceOf(address(this));
     }
     
-
     function getCswapBalance() public view returns(uint256){
         return  cswap.balanceOf(address(this));
     }
-    
-    
-    
-    
-    
-    
-    
-    // use this fuction for withdrawing all the unsold tokens
 
-    function withdrawTokens( ) public{
-        require(msg.sender == owner,"You are not the owner");
+    // use this function to withdraw all the unsold tokens
+    function withdrawTokens() public onlyOwner{
         cswap.safeTransfer(owner,getUnicornBalance());
         unicorn.safeTransfer(owner,getCswapBalance());
 
     }
     
-    
-    
-    // use this fuction for withdrawing all the ethers
-    function withdrawBalance( ) public{
-        require(msg.sender == owner,"You are not the owner");
+    // use this function to withdraw all the ethers
+    function withdrawBalance( ) public onlyOwner{
         payable(msg.sender).transfer(address(this).balance);
     }
     
-   
 }
 
 

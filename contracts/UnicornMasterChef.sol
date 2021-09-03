@@ -325,7 +325,7 @@ contract UnicornMasterChef is Ownable {
     uint256 public constant BONUS_MULTIPLIER = 1;
     // Deposit Fee address
     address public feeAddress;
-    uint256 private MAX_FEE = 400; //4%
+    uint256 private constant MAX_FEE = 400; //4%
 
     // Info of each pool.
     PoolInfo[] public poolInfo;
@@ -336,6 +336,7 @@ contract UnicornMasterChef is Ownable {
     // The block number when UNIQ mining starts.
     uint256 public startBlock;
 
+    
     event Deposit(address indexed user, uint256 indexed pid, uint256 amount);
     event Withdraw(address indexed user, uint256 indexed pid, uint256 amount);
     event EmergencyWithdraw(address indexed user, uint256 indexed pid, uint256 amount);
@@ -565,7 +566,7 @@ contract UnicornMasterChef is Ownable {
             commissionAmount = _pending.mul(referralCommissionRate).div(10000);
 
             if (referrer != address(0) && commissionAmount > 0) {
-                safeUNIQTransfer(referrer, commissionAmount);
+                uniq.mint(referrer, commissionAmount);
                 unicornReferral.recordReferralCommission(referrer, commissionAmount);
                 emit ReferralCommissionPaid(_user, referrer, commissionAmount);
             }else{
